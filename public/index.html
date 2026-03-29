@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InfraDesk — Ticket Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #1a1d25;
+  --surface3: #22262f;
+  --border: #2a2e3a;
+  --border2: #363b48;
+  --text: #e8eaf0;
+  --text2: #9099b0;
+  --text3: #5a6070;
+  --accent: #4f7aff;
+  --accent2: #6b93ff;
+  --accent-glow: rgba(79,122,255,0.15);
+  --critical: #ff4455;
+  --critical-bg: rgba(255,68,85,0.1);
+  --high: #ff8c42;
+  --high-bg: rgba(255,140,66,0.1);
+  --medium: #ffd166;
+  --medium-bg: rgba(255,209,102,0.1);
+  --standard: #06d6a0;
+  --standard-bg: rgba(6,214,160,0.1);
+  --success: #06d6a0;
+  --warning: #ffd166;
+  --danger: #ff4455;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* LAYOUT */
+#app { display: flex; height: 100vh; overflow: hidden; }
+#sidebar {
+  width: 240px; min-width: 240px; background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: width .3s;
+}
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#content { flex: 1; overflow-y: auto; padding: 28px 32px; }
+
+/* AUTH SCREEN */
+#auth-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.auth-box {
+  width: 420px; background: var(--surface);
+  border: 1px solid var(--border2); border-radius: var(--radius-lg);
+  padding: 40px; position: relative; overflow: hidden;
+}
+.auth-box::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(79,122,255,0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+.auth-logo { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.auth-logo span { color: var(--accent); }
+.auth-sub { color: var(--text3); font-size: 13px; margin-bottom: 32px; }
+.auth-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.auth-tab { flex: 1; padding: 9px; text-align: center; cursor: pointer; color: var(--text2); font-size: 13px; font-weight: 500; transition: all .2s; }
+.auth-tab.active { background: var(--accent); color: white; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 10px 12px; color: var(--text);
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color .2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-select { appearance: none; cursor: pointer; }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: var(--radius); border: none;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all .2s;
+  font-family: inherit;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent2); box-shadow: 0 0 20px var(--accent-glow); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.btn-danger { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* SIDEBAR */
+.sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px;
+}
+.sidebar-logo span { color: var(--accent); }
+.sidebar-logo small { display: block; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: var(--text3); margin-top: 2px; }
+.nav-section { padding: 16px 12px 8px; }
+.nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 0 8px; margin-bottom: 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+  border-radius: var(--radius); cursor: pointer; color: var(--text2);
+  font-size: 13px; font-weight: 400; transition: all .15s; margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-glow); color: var(--accent2); border-color: rgba(79,122,255,0.2); }
+.nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-badge { margin-left: auto; background: var(--critical); color: white; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-family: 'DM Mono', monospace; }
+.sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+.user-card { display: flex; align-items: center; gap: 10px; }
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.user-info { flex: 1; overflow: hidden; }
+.user-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--text3); }
+.btn-logout { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 4px; transition: color .2s; }
+.btn-logout:hover { color: var(--critical); }
+
+/* TOPBAR */
+#topbar {
+  display: flex; align-items: center; padding: 0 32px;
+  height: 60px; border-bottom: 1px solid var(--border);
+  background: var(--surface); gap: 16px; flex-shrink: 0;
+}
+.topbar-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; flex: 1; }
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 7px 12px; width: 240px;
+}
+.search-box input { background: none; border: none; outline: none; color: var(--text); font-size: 13px; width: 100%; }
+.search-box input::placeholder { color: var(--text3); }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* DASHBOARD */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+  position: relative; overflow: hidden; transition: border-color .2s;
+}
+.stat-card:hover { border-color: var(--border2); }
+.stat-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent-color, var(--accent));
+}
+.stat-value { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 12px; color: var(--text2); margin-top: 6px; text-transform: uppercase; letter-spacing: .5px; }
+.stat-icon { position: absolute; right: 16px; top: 16px; font-size: 28px; opacity: .3; }
+
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+
+/* TICKET TABLE */
+.filters-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-select {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 7px 10px; color: var(--text2); font-size: 12px; cursor: pointer; outline: none;
+}
+.filter-select:focus { border-color: var(--accent); color: var(--text); }
+
+.ticket-table { width: 100%; border-collapse: collapse; }
+.ticket-table th {
+  text-align: left; padding: 10px 14px; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .8px; color: var(--text3);
+  border-bottom: 1px solid var(--border); font-weight: 500;
+}
+.ticket-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.ticket-table tr { transition: background .15s; cursor: pointer; }
+.ticket-table tbody tr:hover { background: var(--surface2); }
+.ticket-table tr:last-child td { border-bottom: none; }
+
+.ticket-id { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent2); }
+.ticket-title-cell { max-width: 280px; }
+.ticket-title-text { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticket-team { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+}
+.badge-critical { background: var(--critical-bg); color: var(--critical); }
+.badge-high { background: var(--high-bg); color: var(--high); }
+.badge-medium { background: var(--medium-bg); color: var(--medium); }
+.badge-standard { background: var(--standard-bg); color: var(--standard); }
+.badge-new { background: rgba(79,122,255,0.1); color: var(--accent2); }
+.badge-in_progress { background: rgba(251,191,36,0.1); color: #fbbf24; }
+.badge-waiting_info { background: rgba(156,163,175,0.1); color: #9ca3af; }
+.badge-resolved { background: rgba(6,214,160,0.1); color: var(--success); }
+.badge-rejected { background: rgba(255,68,85,0.1); color: var(--critical); }
+.badge-closed { background: rgba(90,96,112,0.15); color: var(--text3); }
+
+/* SLA BAR */
+.sla-cell { min-width: 120px; }
+.sla-bar-wrap { display: flex; align-items: center; gap: 6px; }
+.sla-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.sla-bar-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+.sla-on_track .sla-bar-fill { background: var(--success); }
+.sla-at_risk .sla-bar-fill { background: var(--warning); }
+.sla-breached .sla-bar-fill { background: var(--critical); width: 100% !important; }
+.sla-done .sla-bar-fill { background: var(--text3); width: 100% !important; }
+.sla-label { font-size: 10px; white-space: nowrap; }
+.sla-on_track .sla-label { color: var(--success); }
+.sla-at_risk .sla-label { color: var(--warning); }
+.sla-breached .sla-label { color: var(--critical); }
+.sla-done .sla-label { color: var(--text3); }
+
+/* TABLE WRAPPER */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.table-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; color: var(--text3); font-size: 12px; }
+.pagination { display: flex; gap: 6px; }
+.page-btn { padding: 5px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text2); cursor: pointer; font-size: 12px; transition: all .15s; }
+.page-btn:hover, .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* TICKET DETAIL MODAL */
+#modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  z-index: 50; display: none; align-items: flex-start; justify-content: center;
+  padding: 40px 24px; overflow-y: auto;
+  backdrop-filter: blur(4px);
+}
+#modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); width: 100%; max-width: 860px;
+  margin: auto;
+}
+.modal-header {
+  padding: 22px 28px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 16px;
+}
+.modal-header-info { flex: 1; }
+.modal-ticket-id { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent2); margin-bottom: 6px; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.modal-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.modal-close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; padding: 4px; line-height: 1; }
+.modal-close:hover { color: var(--text); }
+.modal-body { display: grid; grid-template-columns: 1fr 280px; gap: 0; }
+.modal-main { padding: 24px 28px; border-right: 1px solid var(--border); }
+.modal-sidebar { padding: 24px 22px; }
+.info-group { margin-bottom: 20px; }
+.info-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); margin-bottom: 6px; }
+.info-value { font-size: 14px; color: var(--text); line-height: 1.6; }
+.info-value a { color: var(--accent2); text-decoration: none; }
+.info-value a:hover { text-decoration: underline; }
+.sla-status-box {
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 14px;
+  margin-bottom: 16px;
+}
+.sla-status-box .sla-bar-bg { height: 6px; margin: 8px 0 6px; }
+.timeline { margin-top: 4px; }
+.timeline-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.timeline-item:last-child { border-bottom: none; }
+.timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border2); flex-shrink: 0; margin-top: 5px; }
+.timeline-dot.done { background: var(--accent); }
+.timeline-content { flex: 1; }
+.timeline-text { font-size: 12px; color: var(--text); }
+.timeline-time { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+/* STATUS UPDATE PANEL */
+.status-update-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; }
+.status-update-box .info-label { margin-bottom: 10px; }
+.status-btns { display: flex; flex-direction: column; gap: 6px; }
+.status-btn {
+  padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border2);
+  background: var(--surface3); color: var(--text2); font-size: 12px;
+  cursor: pointer; text-align: left; transition: all .15s; font-family: inherit;
+}
+.status-btn:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
+
+/* COMMENTS */
+.comments-section { margin-top: 24px; }
+.comment-item { padding: 12px; background: var(--surface2); border-radius: var(--radius); margin-bottom: 8px; border: 1px solid var(--border); }
+.comment-item.internal { border-left: 3px solid var(--warning); }
+.comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.comment-author { font-size: 12px; font-weight: 600; }
+.comment-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+.comment-internal-badge { font-size: 10px; background: var(--medium-bg); color: var(--medium); padding: 1px 5px; border-radius: 3px; margin-left: auto; }
+.comment-body { font-size: 13px; line-height: 1.6; color: var(--text2); }
+.comment-input-box { display: flex; gap: 8px; margin-top: 12px; }
+.comment-input-box textarea { flex: 1; }
+.comment-options { margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+.checkbox-label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); cursor: pointer; }
+
+/* FORM MODAL */
+#form-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  z-index: 60; display: none; align-items: flex-start; justify-content: center;
+  padding: 40px 24px; overflow-y: auto;
+  backdrop-filter: blur(4px);
+}
+#form-modal-overlay.open { display: flex; }
+.form-modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); width: 100%; max-width: 680px;
+  margin: auto; padding: 0;
+}
+.form-modal-header {
+  padding: 22px 28px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.form-modal-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; }
+.form-modal-body { padding: 24px 28px; }
+.section-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+.env-fields { display: none; }
+.env-fields.show { display: block; }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+.empty-state-text { font-size: 14px; }
+
+/* LOADING */
+.loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text3); gap: 10px; }
+.spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOAST */
+#toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 12px 16px; font-size: 13px; color: var(--text); min-width: 240px;
+  display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  animation: slideIn .3s ease;
+}
+.toast-success { border-left: 3px solid var(--success); }
+.toast-error { border-left: 3px solid var(--critical); }
+.toast-info { border-left: 3px solid var(--accent); }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* CHART BARS */
+.chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 80px; margin-top: 8px; }
+.chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.chart-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 4px; transition: height .5s; }
+.chart-bar-label { font-size: 10px; color: var(--text3); text-align: center; white-space: nowrap; }
+.chart-bar-val { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 16px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Infra<span>Desk</span></div>
+    <div class="auth-sub">Infrastructure Ticket Management System</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Đăng nhập</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Đăng ký</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="login-email" placeholder="you@company.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <input type="password" class="form-input" id="login-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Đăng nhập</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="register-form" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Họ tên</label>
+          <input type="text" class="form-input" id="reg-name" placeholder="Nguyễn Văn A">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Team / Phòng ban</label>
+          <input type="text" class="form-input" id="reg-team" placeholder="Project Alpha">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="reg-email" placeholder="you@company.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <input type="password" class="form-input" id="reg-password" placeholder="Tối thiểu 6 ký tự">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vai trò</label>
+        <select class="form-select" id="reg-role">
+          <option value="project_team">Project Team (Dev / BA / QA / PM)</option>
+          <option value="infra_team">Infrastructure / DevOps Team</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Tạo tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-logo">Infra<span>Desk</span><small>v1.0 — SOP Compliant</small></div>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <span class="nav-icon">⬡</span> Dashboard
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Tickets</div>
+      <div class="nav-item" onclick="navigate('tickets')">
+        <span class="nav-icon">◈</span> All Tickets
+        <span class="nav-badge" id="badge-total" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="navigate('tickets', {status:'new'})">
+        <span class="nav-icon">○</span> New
+      </div>
+      <div class="nav-item" onclick="navigate('tickets', {status:'in_progress'})">
+        <span class="nav-icon">◑</span> In Progress
+      </div>
+      <div class="nav-item" onclick="navigate('tickets', {status:'waiting_info'})">
+        <span class="nav-icon">◷</span> Waiting Info
+      </div>
+      <div class="nav-item" id="nav-sla-breach" onclick="navigate('tickets', {sla:'breached'})" style="display:none">
+        <span class="nav-icon">⚠</span> SLA Breached
+        <span class="nav-badge" id="badge-breach">0</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Actions</div>
+      <div class="nav-item" onclick="openCreateTicket()">
+        <span class="nav-icon">＋</span> New Ticket
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar-text">?</div>
+        <div class="user-info">
+          <div class="user-name" id="user-display-name">Loading...</div>
+          <div class="user-role" id="user-display-role">—</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()" title="Đăng xuất">⏻</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="search-box">
+        <span style="color:var(--text3)">⌕</span>
+        <input type="text" id="global-search" placeholder="Tìm ticket ID, tiêu đề..." oninput="handleSearch(this.value)">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openCreateTicket()">+ New Ticket</button>
+    </div>
+    <div id="content">
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard" class="page active">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card" style="--accent-color:var(--accent)">
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-label">Total Tickets</div>
+            <div class="stat-icon">◈</div>
+          </div>
+          <div class="stat-card" style="--accent-color:var(--critical)">
+            <div class="stat-value" id="stat-breach">—</div>
+            <div class="stat-label">SLA Breached</div>
+            <div class="stat-icon">⚠</div>
+          </div>
+          <div class="stat-card" style="--accent-color:var(--warning)">
+            <div class="stat-value" id="stat-inprogress">—</div>
+            <div class="stat-label">In Progress</div>
+            <div class="stat-icon">◑</div>
+          </div>
+          <div class="stat-card" style="--accent-color:var(--success)">
+            <div class="stat-value" id="stat-resolved">—</div>
+            <div class="stat-label">Resolved</div>
+            <div class="stat-icon">✓</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Tickets by Priority</div>
+            <div class="chart-bars" id="priority-chart"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Tickets by Status</div>
+            <div class="chart-bars" id="status-chart"></div>
+          </div>
+        </div>
+        <div class="section-header">
+          <div class="section-title">Recent Tickets</div>
+          <button class="btn btn-ghost btn-sm" onclick="navigate('tickets')">View all →</button>
+        </div>
+        <div class="table-wrap" id="recent-tickets-wrap">
+          <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+
+      <!-- TICKETS PAGE -->
+      <div id="page-tickets" class="page">
+        <div class="filters-bar">
+          <select class="filter-select" id="filter-status" onchange="loadTickets()">
+            <option value="">All Status</option>
+            <option value="new">New</option>
+            <option value="in_progress">In Progress</option>
+            <option value="waiting_info">Waiting Info</option>
+            <option value="resolved">Resolved</option>
+            <option value="rejected">Rejected</option>
+            <option value="closed">Closed</option>
+          </select>
+          <select class="filter-select" id="filter-priority" onchange="loadTickets()">
+            <option value="">All Priority</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="standard">Standard</option>
+          </select>
+          <select class="filter-select" id="filter-category" onchange="loadTickets()">
+            <option value="">All Category</option>
+            <option value="environment_setup">Environment Setup</option>
+            <option value="deployment">Deployment</option>
+            <option value="domain_dns_ssl">Domain / DNS / SSL</option>
+            <option value="access_provisioning">Access Provisioning</option>
+            <option value="port_firewall">Port / Firewall</option>
+            <option value="backup_restore">Backup / Restore</option>
+            <option value="incident">Incident</option>
+            <option value="cicd_config">CI/CD Config</option>
+            <option value="other">Other</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear filters</button>
+          <div style="margin-left:auto">
+            <button class="btn btn-primary btn-sm" onclick="openCreateTicket()">+ New Ticket</button>
+          </div>
+        </div>
+        <div class="table-wrap" id="tickets-table-wrap">
+          <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TICKET DETAIL MODAL -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="ticket-modal">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <div class="modal-ticket-id" id="m-id">—</div>
+        <div class="modal-title" id="m-title">—</div>
+        <div class="modal-meta" id="m-meta"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-main">
+        <div class="info-group">
+          <div class="info-label">Description</div>
+          <div class="info-value" id="m-description">—</div>
+        </div>
+        <div id="m-env-section" style="display:none">
+          <hr class="section-divider">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent2)">⬡ Environment Details</div>
+          <div class="form-row" id="m-env-details"></div>
+        </div>
+        <hr class="section-divider">
+        <div class="info-group">
+          <div class="info-label">Status History</div>
+          <div class="timeline" id="m-history"></div>
+        </div>
+        <div class="comments-section">
+          <div class="info-label" style="margin-bottom:10px">Comments <span id="comment-count" style="color:var(--text3)"></span></div>
+          <div id="m-comments"></div>
+          <div style="margin-top:12px">
+            <textarea class="form-textarea" id="comment-input" placeholder="Thêm comment..." rows="2"></textarea>
+            <div class="comment-options">
+              <label class="checkbox-label" id="internal-label" style="display:none">
+                <input type="checkbox" id="comment-internal"> Internal note (only Infra Team)
+              </label>
+              <button class="btn btn-primary btn-sm" onclick="submitComment()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-sidebar">
+        <div class="info-group">
+          <div class="info-label">SLA Status</div>
+          <div class="sla-status-box" id="m-sla-box"></div>
+        </div>
+        <div id="infra-actions" style="display:none">
+          <div class="status-update-box">
+            <div class="info-label">Update Status</div>
+            <div class="status-btns" id="status-btns"></div>
+          </div>
+          <div class="form-group" id="assign-section">
+            <label class="form-label">Assign to</label>
+            <select class="form-select" id="assign-select" onchange="assignTicket()">
+              <option value="">— Chưa gán —</option>
+            </select>
+          </div>
+        </div>
+        <hr class="section-divider">
+        <div class="info-group">
+          <div class="info-label">Requester</div>
+          <div class="info-value" id="m-requester">—</div>
+        </div>
+        <div class="info-group">
+          <div class="info-label">Project / Team</div>
+          <div class="info-value" id="m-team">—</div>
+        </div>
+        <div class="info-group">
+          <div class="info-label">Category</div>
+          <div class="info-value" id="m-category">—</div>
+        </div>
+        <div class="info-group">
+          <div class="info-label">Environment</div>
+          <div class="info-value" id="m-env">—</div>
+        </div>
+        <div class="info-group" id="m-links-group" style="display:none">
+          <div class="info-label">Links</div>
+          <div class="info-value" id="m-links"></div>
+        </div>
+        <div class="info-group">
+          <div class="info-label">Assigned To</div>
+          <div class="info-value" id="m-assigned">—</div>
+        </div>
+        <div class="info-group">
+          <div class="info-label">Created</div>
+          <div class="info-value" id="m-created" style="font-family:'DM Mono',monospace;font-size:12px">—</div>
+        </div>
+        <div class="info-group">
+          <div class="info-label">Deadline</div>
+          <div class="info-value" id="m-deadline" style="font-family:'DM Mono',monospace;font-size:12px">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE TICKET MODAL -->
+<div id="form-modal-overlay" onclick="handleFormOverlayClick(event)">
+  <div class="form-modal">
+    <div class="form-modal-header">
+      <div class="form-modal-title">⬡ New Infrastructure Request</div>
+      <button class="modal-close" onclick="closeFormModal()">✕</button>
+    </div>
+    <div class="form-modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Requester Name *</label>
+          <input type="text" class="form-input" id="f-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Email *</label>
+          <input type="email" class="form-input" id="f-email">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Project / Team *</label>
+          <input type="text" class="form-input" id="f-team">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Technical Contact</label>
+          <input type="text" class="form-input" id="f-contact" placeholder="Người phụ trách kỹ thuật">
+        </div>
+      </div>
+      <hr class="section-divider">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-select" id="f-category" onchange="handleCategoryChange()">
+            <option value="">— Chọn loại yêu cầu —</option>
+            <option value="environment_setup">🌐 Environment Setup</option>
+            <option value="deployment">🚀 Deployment</option>
+            <option value="domain_dns_ssl">🔒 Domain / DNS / SSL</option>
+            <option value="access_provisioning">🔑 Access Provisioning</option>
+            <option value="port_firewall">🛡 Port / Firewall</option>
+            <option value="backup_restore">💾 Backup / Restore</option>
+            <option value="incident">🔴 Incident</option>
+            <option value="cicd_config">⚙ CI/CD Config</option>
+            <option value="other">📋 Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority *</label>
+          <select class="form-select" id="f-priority">
+            <option value="">— Chọn độ ưu tiên —</option>
+            <option value="critical">🔴 Critical — SLA: 2h</option>
+            <option value="high">🟠 High — SLA: 4h</option>
+            <option value="medium">🟡 Medium — SLA: 8h</option>
+            <option value="standard">🟢 Standard — SLA: 2 days</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" class="form-input" id="f-title" placeholder="Mô tả ngắn gọn yêu cầu">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea class="form-textarea" id="f-description" rows="4" placeholder="Mô tả chi tiết yêu cầu, bối cảnh, và thông tin cần thiết..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Target Environment</label>
+          <select class="form-select" id="f-env">
+            <option value="">— Chọn môi trường —</option>
+            <option value="production">Production</option>
+            <option value="staging">Staging</option>
+            <option value="uat">UAT</option>
+            <option value="development">Development</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Requested Completion</label>
+          <input type="datetime-local" class="form-input" id="f-deadline">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Related Links (repo, URL, docs...)</label>
+        <input type="text" class="form-input" id="f-links" placeholder="https://github.com/...">
+      </div>
+
+      <!-- ENV SETUP EXTRA FIELDS -->
+      <div class="env-fields" id="env-extra-fields">
+        <hr class="section-divider">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:14px;color:var(--accent2)">⬡ New Environment Setup Details</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Environment Name</label>
+            <input type="text" class="form-input" id="f-envname" placeholder="staging-projectalpha">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Domain / Subdomain</label>
+            <input type="text" class="form-input" id="f-domain" placeholder="staging.example.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tech Stack & Versions</label>
+            <input type="text" class="form-input" id="f-stack" placeholder="Node 20, React 18, MongoDB 7">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Branch</label>
+            <input type="text" class="form-input" id="f-branch" placeholder="develop">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Run Command / Startup</label>
+          <input type="text" class="form-input" id="f-runcmd" placeholder="npm install && npm run build && npm start">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Technical Documentation Link</label>
+          <input type="text" class="form-input" id="f-techdoc" placeholder="https://docs.example.com/...">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+        <button class="btn btn-ghost" onclick="closeFormModal()">Hủy</button>
+        <button class="btn btn-primary" onclick="submitTicket()">⬡ Submit Ticket</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const API = '/api';
+let token = localStorage.getItem('token');
+let currentUser = null;
+let currentTicketId = null;
+let infraMembers = [];
+let searchTimeout = null;
+let currentFilters = {};
+
+// ==================== AUTH ====================
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'login')));
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return toast('Vui lòng nhập đầy đủ thông tin', 'error');
+  try {
+    const res = await fetch(`${API}/auth/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
+    const data = await res.json();
+    if (!res.ok) return toast(data.error || 'Đăng nhập thất bại', 'error');
+    localStorage.setItem('token', data.token);
+    token = data.token;
+    currentUser = data.user;
+    initApp();
+  } catch { toast('Lỗi kết nối server', 'error'); }
+}
+
+async function doRegister() {
+  const body = {
+    fullName: document.getElementById('reg-name').value,
+    email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-password').value,
+    role: document.getElementById('reg-role').value,
+    team: document.getElementById('reg-team').value
+  };
+  if (!body.fullName || !body.email || !body.password) return toast('Vui lòng điền đầy đủ thông tin', 'error');
+  try {
+    const res = await fetch(`${API}/auth/register`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) return toast(data.error || 'Đăng ký thất bại', 'error');
+    localStorage.setItem('token', data.token);
+    token = data.token;
+    currentUser = data.user;
+    initApp();
+  } catch { toast('Lỗi kết nối server', 'error'); }
+}
+
+async function checkAuth() {
+  if (!token) return showAuth();
+  try {
+    const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { localStorage.removeItem('token'); return showAuth(); }
+    const data = await res.json();
+    currentUser = data.user;
+    initApp();
+  } catch { showAuth(); }
+}
+
+function doLogout() {
+  localStorage.removeItem('token');
+  token = null;
+  currentUser = null;
+  showAuth();
+}
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+async function initApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('user-display-name').textContent = currentUser.fullName;
+  document.getElementById('user-display-role').textContent = roleLabel(currentUser.role);
+  document.getElementById('user-avatar-text').textContent = currentUser.fullName.charAt(0).toUpperCase();
+
+  // Show SLA breach nav for infra team
+  if (currentUser.role !== 'project_team') {
+    document.getElementById('nav-sla-breach').style.display = 'flex';
+  }
+
+  // Load infra members for assignment
+  if (currentUser.role !== 'project_team') {
+    const res = await apiFetch('/auth/infra-members');
+    if (res) { infraMembers = res; populateAssignSelect(); }
+  }
+
+  loadDashboard();
+}
+
+// ==================== NAVIGATION ====================
+function navigate(page, filters = {}) {
+  currentFilters = filters;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  const pageEl = document.getElementById(`page-${page}`);
+  if (pageEl) pageEl.classList.add('active');
+  
+  const titles = { dashboard: 'Dashboard', tickets: 'All Tickets' };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'tickets') {
+    // Apply filter presets
+    if (filters.status) document.getElementById('filter-status').value = filters.status;
+    loadTickets();
+  }
+}
+
+// ==================== API HELPER ====================
+async function apiFetch(path, opts = {}) {
+  try {
+    const res = await fetch(`${API}${path}`, {
+      ...opts,
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Request failed', 'error'); return null; }
+    return data;
+  } catch { toast('Network error', 'error'); return null; }
+}
+
+// ==================== DASHBOARD ====================
+async function loadDashboard() {
+  const data = await apiFetch('/tickets/stats/dashboard');
+  if (!data) return;
+
+  document.getElementById('stat-total').textContent = data.total;
+  document.getElementById('stat-breach').textContent = data.slaBreached;
+
+  const inprogress = data.statusStats.find(s => s._id === 'in_progress');
+  document.getElementById('stat-inprogress').textContent = inprogress?.count || 0;
+
+  const resolved = data.statusStats.find(s => s._id === 'resolved');
+  const closed = data.statusStats.find(s => s._id === 'closed');
+  document.getElementById('stat-resolved').textContent = (resolved?.count || 0) + (closed?.count || 0);
+
+  // Update badge
+  if (data.slaBreached > 0) {
+    document.getElementById('badge-breach').textContent = data.slaBreached;
+  }
+
+  // Priority chart
+  const priorityColors = { critical: '#ff4455', high: '#ff8c42', medium: '#ffd166', standard: '#06d6a0' };
+  const priorityOrder = ['critical', 'high', 'medium', 'standard'];
+  const maxP = Math.max(...data.priorityStats.map(p => p.count), 1);
+  document.getElementById('priority-chart').innerHTML = priorityOrder.map(p => {
+    const item = data.priorityStats.find(s => s._id === p);
+    const count = item?.count || 0;
+    const h = Math.max((count / maxP) * 64, count > 0 ? 8 : 0);
+    return `<div class="chart-bar-wrap">
+      <div class="chart-bar-val">${count}</div>
+      <div class="chart-bar" style="height:${h}px;background:${priorityColors[p]}"></div>
+      <div class="chart-bar-label">${p.charAt(0).toUpperCase() + p.slice(1)}</div>
+    </div>`;
+  }).join('');
+
+  // Status chart
+  const statusColors = { new: '#4f7aff', in_progress: '#fbbf24', waiting_info: '#9ca3af', resolved: '#06d6a0', rejected: '#ff4455', closed: '#5a6070' };
+  const maxS = Math.max(...data.statusStats.map(s => s.count), 1);
+  document.getElementById('status-chart').innerHTML = data.statusStats.map(s => {
+    const h = Math.max((s.count / maxS) * 64, 8);
+    const lbl = s._id.replace('_', ' ');
+    return `<div class="chart-bar-wrap">
+      <div class="chart-bar-val">${s.count}</div>
+      <div class="chart-bar" style="height:${h}px;background:${statusColors[s._id] || '#4f7aff'}"></div>
+      <div class="chart-bar-label">${lbl}</div>
+    </div>`;
+  }).join('');
+
+  // Recent tickets
+  const wrap = document.getElementById('recent-tickets-wrap');
+  if (!data.recentTickets.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">◈</div><div class="empty-state-text">Chưa có ticket nào. Hãy tạo ticket đầu tiên!</div></div>`;
+    return;
+  }
+  wrap.innerHTML = renderTable(data.recentTickets, true);
+}
+
+// ==================== TICKETS ====================
+async function loadTickets() {
+  const wrap = document.getElementById('tickets-table-wrap');
+  wrap.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
+
+  const params = new URLSearchParams();
+  const status = document.getElementById('filter-status')?.value;
+  const priority = document.getElementById('filter-priority')?.value;
+  const category = document.getElementById('filter-category')?.value;
+  const search = document.getElementById('global-search')?.value;
+
+  if (status) params.set('status', status);
+  if (priority) params.set('priority', priority);
+  if (category) params.set('category', category);
+  if (search) params.set('search', search);
+
+  const data = await apiFetch(`/tickets?${params}`);
+  if (!data) return;
+
+  if (!data.tickets.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">◈</div><div class="empty-state-text">Không tìm thấy ticket nào</div></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="table-header">
+      <span style="font-size:13px;color:var(--text2)">${data.total} ticket(s) found</span>
+    </div>
+    ${renderTable(data.tickets, false)}
+    <div class="table-footer">
+      <span>Page ${data.current} of ${data.pages}</span>
+    </div>`;
+}
+
+function renderTable(tickets, compact) {
+  return `<table class="ticket-table">
+    <thead><tr>
+      <th>Ticket ID</th>
+      <th>Title</th>
+      ${!compact ? '<th>Category</th>' : ''}
+      <th>Priority</th>
+      <th>Status</th>
+      <th>SLA</th>
+      <th>Created</th>
+    </tr></thead>
+    <tbody>
+      ${tickets.map(t => `
+        <tr onclick="openTicket('${t._id || t.ticketId}')">
+          <td><span class="ticket-id">${t.ticketId}</span></td>
+          <td class="ticket-title-cell">
+            <div class="ticket-title-text">${t.title}</div>
+            <div class="ticket-team">${t.projectTeam || ''}</div>
+          </td>
+          ${!compact ? `<td><span style="font-size:12px;color:var(--text2)">${catLabel(t.category)}</span></td>` : ''}
+          <td>${priorityBadge(t.priority)}</td>
+          <td>${statusBadge(t.status)}</td>
+          <td class="sla-cell">${renderSLABar(t.slaStatus)}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${fmtDate(t.createdAt)}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ==================== TICKET DETAIL ====================
+async function openTicket(id) {
+  document.getElementById('modal-overlay').classList.add('open');
+  currentTicketId = id;
+
+  const ticket = await apiFetch(`/tickets/${id}`);
+  if (!ticket) return;
+
+  document.getElementById('m-id').textContent = ticket.ticketId;
+  document.getElementById('m-title').textContent = ticket.title;
+  document.getElementById('m-description').textContent = ticket.description;
+  document.getElementById('m-requester').textContent = `${ticket.requesterName} <${ticket.requesterEmail}>`;
+  document.getElementById('m-team').textContent = ticket.projectTeam || '—';
+  document.getElementById('m-category').textContent = catLabel(ticket.category);
+  document.getElementById('m-env').textContent = ticket.targetEnvironment || '—';
+  document.getElementById('m-created').textContent = fmtDateTime(ticket.createdAt);
+  document.getElementById('m-deadline').textContent = fmtDateTime(ticket.sla?.resolutionDeadline);
+  document.getElementById('m-assigned').textContent = ticket.assignedToName || ticket.assignedTo?.fullName || '— Unassigned —';
+
+  document.getElementById('m-meta').innerHTML = `
+    ${priorityBadge(ticket.priority)}
+    ${statusBadge(ticket.status)}
+    ${ticket.targetEnvironment ? `<span class="badge" style="background:var(--surface2);color:var(--text2)">${ticket.targetEnvironment}</span>` : ''}`;
+
+  // Links
+  if (ticket.repositoryLink || ticket.relatedLinks) {
+    document.getElementById('m-links-group').style.display = 'block';
+    document.getElementById('m-links').innerHTML = [ticket.repositoryLink, ticket.relatedLinks].filter(Boolean)
+      .map(l => `<a href="${l}" target="_blank">${l}</a>`).join('<br>');
+  }
+
+  // Env details section
+  if (ticket.envDetails && Object.values(ticket.envDetails).some(v => v)) {
+    document.getElementById('m-env-section').style.display = 'block';
+    const env = ticket.envDetails;
+    document.getElementById('m-env-details').innerHTML = [
+      ['Environment Name', env.environmentName],
+      ['Domain', env.domain],
+      ['Tech Stack', env.techStack],
+      ['Branch', env.branch],
+      ['Run Command', env.runCommand],
+      ['Tech Doc', env.technicalDoc]
+    ].filter(([, v]) => v).map(([l, v]) => `
+      <div class="info-group">
+        <div class="info-label">${l}</div>
+        <div class="info-value" style="font-family:'DM Mono',monospace;font-size:12px">${v}</div>
+      </div>`).join('');
+  } else {
+    document.getElementById('m-env-section').style.display = 'none';
+  }
+
+  // SLA box
+  const sla = ticket.slaStatus || {};
+  document.getElementById('m-sla-box').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:600">${sla.label || 'N/A'}</span>
+      <span style="font-size:10px;color:var(--text3)">${Math.round(sla.percent || 0)}% time left</span>
+    </div>
+    <div class="sla-bar-bg sla-${sla.status}">
+      <div class="sla-bar-fill" style="width:${sla.percent || 0}%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3)">Deadline: ${fmtDateTime(ticket.sla?.resolutionDeadline)}</div>`;
+
+  // Status history
+  document.getElementById('m-history').innerHTML = (ticket.statusHistory || []).map(h => `
+    <div class="timeline-item">
+      <div class="timeline-dot done"></div>
+      <div class="timeline-content">
+        <div class="timeline-text">${statusBadge(h.from)} → ${statusBadge(h.to)} by <strong>${h.changedBy}</strong>${h.note ? ' — ' + h.note : ''}</div>
+        <div class="timeline-time">${fmtDateTime(h.changedAt)}</div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--text3);font-size:12px">No history yet</div>';
+
+  // Comments
+  const visibleComments = ticket.comments?.filter(c => currentUser.role !== 'project_team' || !c.isInternal) || [];
+  document.getElementById('comment-count').textContent = `(${visibleComments.length})`;
+  document.getElementById('m-comments').innerHTML = visibleComments.map(c => `
+    <div class="comment-item ${c.isInternal ? 'internal' : ''}">
+      <div class="comment-header">
+        <div class="user-avatar" style="width:26px;height:26px;font-size:11px">${c.authorName?.charAt(0) || '?'}</div>
+        <span class="comment-author">${c.authorName}</span>
+        <span class="comment-time">${fmtDateTime(c.createdAt)}</span>
+        ${c.isInternal ? '<span class="comment-internal-badge">Internal</span>' : ''}
+      </div>
+      <div class="comment-body">${c.content}</div>
+    </div>`).join('') || '<div style="color:var(--text3);font-size:12px;margin-bottom:8px">No comments yet.</div>';
+
+  // Infra actions
+  if (currentUser.role !== 'project_team') {
+    document.getElementById('infra-actions').style.display = 'block';
+    document.getElementById('internal-label').style.display = 'flex';
+    renderStatusButtons(ticket.status, ticket._id);
+    // Set assign select
+    document.getElementById('assign-select').value = ticket.assignedTo?._id || '';
+  } else {
+    document.getElementById('infra-actions').style.display = 'none';
+    document.getElementById('internal-label').style.display = 'none';
+  }
+}
+
+function renderStatusButtons(currentStatus, ticketId) {
+  const transitions = {
+    new: [['in_progress', '▶ Start Processing', '#fbbf24'], ['waiting_info', '◷ Request Info', '#9ca3af'], ['rejected', '✕ Reject', '#ff4455']],
+    in_progress: [['waiting_info', '◷ Request Info', '#9ca3af'], ['resolved', '✓ Mark Resolved', '#06d6a0'], ['rejected', '✕ Reject', '#ff4455']],
+    waiting_info: [['in_progress', '▶ Resume', '#fbbf24'], ['resolved', '✓ Mark Resolved', '#06d6a0']],
+    resolved: [['closed', '⬡ Close Ticket', '#5a6070']],
+    rejected: [],
+    closed: []
+  };
+
+  const btns = transitions[currentStatus] || [];
+  document.getElementById('status-btns').innerHTML = btns.map(([status, label, color]) =>
+    `<button class="status-btn" style="color:${color};border-color:${color}22" onclick="updateStatus('${ticketId}', '${status}')">${label}</button>`
+  ).join('') || '<div style="color:var(--text3);font-size:12px">No actions available</div>';
+}
+
+async function updateStatus(ticketId, status) {
+  let note = '';
+  if (status === 'rejected') {
+    note = prompt('Lý do từ chối:');
+    if (note === null) return;
+  }
+  if (status === 'resolved') {
+    note = prompt('Ghi chú giải quyết (tùy chọn):') || '';
+  }
+  const data = await apiFetch(`/tickets/${ticketId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, note, resolutionNote: note })
+  });
+  if (data) { toast(`Ticket updated to "${status}"`, 'success'); openTicket(ticketId); loadDashboard(); }
+}
+
+function populateAssignSelect() {
+  const sel = document.getElementById('assign-select');
+  sel.innerHTML = '<option value="">— Chưa gán —</option>' +
+    infraMembers.map(m => `<option value="${m._id}">${m.fullName} (${m.team || m.role})</option>`).join('');
+}
+
+async function assignTicket() {
+  const assignedId = document.getElementById('assign-select').value;
+  const member = infraMembers.find(m => m._id === assignedId);
+  if (!currentTicketId) return;
+  const ticket = await apiFetch(`/tickets/${currentTicketId}`);
+  if (!ticket) return;
+  await apiFetch(`/tickets/${ticket._id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: ticket.status, assignedTo: assignedId, assignedToName: member?.fullName || '' })
+  });
+  toast('Ticket assigned', 'success');
+}
+
+async function submitComment() {
+  const content = document.getElementById('comment-input').value.trim();
+  const isInternal = document.getElementById('comment-internal').checked;
+  if (!content) return toast('Vui lòng nhập nội dung comment', 'error');
+  const ticket = await apiFetch(`/tickets/${currentTicketId}`);
+  if (!ticket) return;
+  const result = await apiFetch(`/tickets/${ticket._id}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ content, isInternal })
+  });
+  if (result) {
+    document.getElementById('comment-input').value = '';
+    document.getElementById('comment-internal').checked = false;
+    toast('Comment added', 'success');
+    openTicket(currentTicketId);
+  }
+}
+
+// ==================== CREATE TICKET ====================
+function openCreateTicket() {
+  const u = currentUser;
+  document.getElementById('f-name').value = u?.fullName || '';
+  document.getElementById('f-email').value = u?.email || '';
+  document.getElementById('f-team').value = u?.team || '';
+  document.getElementById('form-modal-overlay').classList.add('open');
+}
+function closeFormModal() { document.getElementById('form-modal-overlay').classList.remove('open'); }
+function handleFormOverlayClick(e) { if (e.target === document.getElementById('form-modal-overlay')) closeFormModal(); }
+
+function handleCategoryChange() {
+  const val = document.getElementById('f-category').value;
+  document.getElementById('env-extra-fields').classList.toggle('show', val === 'environment_setup');
+}
+
+async function submitTicket() {
+  const fields = {
+    requesterName: document.getElementById('f-name').value,
+    requesterEmail: document.getElementById('f-email').value,
+    projectTeam: document.getElementById('f-team').value,
+    technicalContact: document.getElementById('f-contact').value,
+    category: document.getElementById('f-category').value,
+    priority: document.getElementById('f-priority').value,
+    title: document.getElementById('f-title').value,
+    description: document.getElementById('f-description').value,
+    targetEnvironment: document.getElementById('f-env').value,
+    repositoryLink: document.getElementById('f-links').value,
+    requestedCompletionTime: document.getElementById('f-deadline').value || undefined
+  };
+
+  if (!fields.requesterName || !fields.requesterEmail || !fields.category || !fields.priority || !fields.title || !fields.description) {
+    return toast('Vui lòng điền đầy đủ các trường bắt buộc (*)', 'error');
+  }
+
+  if (fields.category === 'environment_setup') {
+    fields.envDetails = {
+      environmentName: document.getElementById('f-envname').value,
+      domain: document.getElementById('f-domain').value,
+      techStack: document.getElementById('f-stack').value,
+      branch: document.getElementById('f-branch').value,
+      runCommand: document.getElementById('f-runcmd').value,
+      technicalDoc: document.getElementById('f-techdoc').value
+    };
+  }
+
+  const data = await apiFetch('/tickets', { method: 'POST', body: JSON.stringify(fields) });
+  if (data) {
+    toast(`Ticket ${data.ticketId} created successfully!`, 'success');
+    closeFormModal();
+    clearForm();
+    loadDashboard();
+    if (document.getElementById('page-tickets').classList.contains('active')) loadTickets();
+  }
+}
+
+function clearForm() {
+  ['f-name','f-email','f-team','f-contact','f-title','f-description','f-links','f-deadline','f-envname','f-domain','f-stack','f-branch','f-runcmd','f-techdoc']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['f-category','f-priority','f-env'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('env-extra-fields').classList.remove('show');
+}
+
+// ==================== SEARCH ====================
+function handleSearch(val) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    if (document.getElementById('page-tickets').classList.contains('active')) loadTickets();
+  }, 400);
+}
+
+function clearFilters() {
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-priority').value = '';
+  document.getElementById('filter-category').value = '';
+  loadTickets();
+}
+
+// ==================== MODALS ====================
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); currentTicketId = null; }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+// ==================== HELPERS ====================
+function priorityBadge(p) {
+  const map = { critical: '🔴 Critical', high: '🟠 High', medium: '🟡 Medium', standard: '🟢 Standard' };
+  return `<span class="badge badge-${p}">${map[p] || p}</span>`;
+}
+function statusBadge(s) {
+  const map = { new: 'New', in_progress: 'In Progress', waiting_info: 'Waiting Info', resolved: 'Resolved', rejected: 'Rejected', closed: 'Closed' };
+  return `<span class="badge badge-${s}">${map[s] || s}</span>`;
+}
+function catLabel(c) {
+  const map = { environment_setup: 'Environment Setup', deployment: 'Deployment', domain_dns_ssl: 'Domain/DNS/SSL', access_provisioning: 'Access Provisioning', port_firewall: 'Port/Firewall', backup_restore: 'Backup/Restore', incident: 'Incident', cicd_config: 'CI/CD Config', other: 'Other' };
+  return map[c] || c;
+}
+function roleLabel(r) {
+  const map = { project_team: 'Project Team', infra_team: 'Infra Team', admin: 'Admin' };
+  return map[r] || r;
+}
+function renderSLABar(sla) {
+  if (!sla) return '<span style="color:var(--text3);font-size:11px">N/A</span>';
+  return `<div class="sla-bar-wrap sla-${sla.status}">
+    <div class="sla-bar-bg"><div class="sla-bar-fill" style="width:${sla.percent || 0}%"></div></div>
+    <span class="sla-label">${sla.label}</span>
+  </div>`;
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+function fmtDateTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span> ${msg}`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ==================== INIT ====================
+checkAuth();
+</script>
+</body>
+</html>
