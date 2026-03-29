@@ -462,6 +462,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <span class="nav-icon">＋</span> New Ticket
       </div>
     </div>
+    <div class="nav-section">
+      <div class="nav-label">Help</div>
+      <div class="nav-item" onclick="navigate('guide')">
+        <span class="nav-icon">ℹ</span> User Guide
+      </div>
+    </div>
     <div class="sidebar-footer">
       <div class="user-card">
         <div class="user-avatar" id="user-avatar-text">?</div>
@@ -566,6 +572,81 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </div>
         <div class="table-wrap" id="tickets-table-wrap">
           <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+
+      <!-- GUIDE PAGE -->
+      <div id="page-guide" class="page">
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-title">📘 Hướng dẫn sử dụng hệ thống InfraDesk</div>
+          <div class="info-value">
+            Chào mừng bạn đến với <strong>InfraDesk</strong> — Hệ thống quản lý yêu cầu hạ tầng tuân thủ SOP (Standard Operating Procedure). Dưới đây là hướng dẫn chi tiết các bước để bạn sử dụng hệ thống hiệu quả.
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">1. Quy trình tạo Ticket (Raise Request)</div>
+            <div class="info-value">
+              <ul style="padding-left: 20px; line-height: 1.8;">
+                <li>Nhấn nút <strong>+ New Ticket</strong> ở góc trên bên phải hoặc Sidebar.</li>
+                <li><strong>Thông tin người yêu cầu:</strong> Hệ thống tự điền thông tin tài khoản của bạn.</li>
+                <li><strong>Loại yêu cầu (Category):</strong> Chọn đúng phân loại (Environment, Deployment, Database...) để được hỗ trợ nhanh nhất.</li>
+                <li><strong>Độ ưu tiên (Priority):</strong> Tự đánh giá mức độ khẩn cấp theo hướng dẫn SLA.</li>
+                <li><strong>Environment Setup:</strong> Nếu chọn loại này, bạn cần cung cấp thêm thông tin về Tech Stack, Git Branch, và tài liệu kỹ thuật.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">2. Chính sách SLA (Service Level Agreement)</div>
+            <div class="info-value">
+              Hệ thống tự động tính toán thời hạn xử lý dựa trên độ ưu tiên:
+              <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="text-align: left; padding: 4px;">Ưu tiên</th>
+                    <th style="text-align: left; padding: 4px;">Phản hồi</th>
+                    <th style="text-align: left; padding: 4px;">Xử lý xong</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td style="padding: 4px; color: var(--critical);">Critical</td><td style="padding: 4px;">15 phút</td><td style="padding: 4px;">2 giờ</td></tr>
+                  <tr><td style="padding: 4px; color: var(--high);">High</td><td style="padding: 4px;">30 phút</td><td style="padding: 4px;">4 giờ</td></tr>
+                  <tr><td style="padding: 4px; color: var(--medium);">Medium</td><td style="padding: 4px;">1 giờ</td><td style="padding: 4px;">8 giờ</td></tr>
+                  <tr><td style="padding: 4px; color: var(--standard);">Standard</td><td style="padding: 4px;">2 giờ</td><td style="padding: 4px;">1-2 ngày</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-title">3. Theo dõi và Tương tác</div>
+          <div class="info-value">
+            <ul style="padding-left: 20px; line-height: 1.8;">
+              <li><strong>Trạng thái (Status):</strong> 
+                <span class="badge badge-new">New</span> (Mới) → 
+                <span class="badge badge-in_progress">In Progress</span> (Đang xử lý) → 
+                <span class="badge badge-resolved">Resolved</span> (Đã xong).
+              </li>
+              <li><strong>Waiting Info:</strong> Nếu ticket ở trạng thái này, Infra Team đang chờ thông tin thêm từ bạn. Hãy kiểm tra Comment và phản hồi sớm.</li>
+              <li><strong>Comments:</strong> Đây là kênh trao đổi chính thức. Mọi thay đổi cấu hình, thông báo lỗi hoặc yêu cầu bổ sung nên được ghi nhận tại đây để đảm bảo tính lịch sử.</li>
+              <li><strong>SLA Bar:</strong> Thanh màu sắc giúp bạn nhận biết ticket có đang trong thời hạn xử lý hay không (Xanh: Ổn định, Vàng: Sắp quá hạn, Đỏ: Đã vi phạm SLA).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">4. Vai trò của Infra Team</div>
+          <div class="info-value">
+            Đội ngũ Infrastructure sẽ:
+            <ul style="padding-left: 20px; line-height: 1.8;">
+              <li>Tiếp nhận và phân bổ ticket (Assign) cho nhân sự phụ trách.</li>
+              <li>Cập nhật trạng thái xử lý theo thời gian thực.</li>
+              <li>Ghi chú nội bộ (Internal Notes) cho các xử lý kỹ thuật phức tạp.</li>
+              <li>Đảm bảo hệ thống vận hành ổn định và tuân thủ các chính sách bảo mật.</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -902,7 +983,7 @@ function navigate(page, filters = {}) {
   const pageEl = document.getElementById(`page-${page}`);
   if (pageEl) pageEl.classList.add('active');
   
-  const titles = { dashboard: 'Dashboard', tickets: 'All Tickets' };
+  const titles = { dashboard: 'Dashboard', tickets: 'All Tickets', guide: 'Hướng dẫn sử dụng' };
   document.getElementById('topbar-title').textContent = titles[page] || page;
 
   if (page === 'dashboard') loadDashboard();
